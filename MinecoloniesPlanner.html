@@ -574,12 +574,12 @@
 
         this.pushUndo();
         // 在放置建筑时也使用半格精度
-        const newBuilding = { 
-          ...building, 
-          id: crypto.randomUUID(), 
-          x: this.roundToHalfGrid(worldPos.x - building.width / 2), 
-          y: this.roundToHalfGrid(worldPos.y - building.length / 2), 
-          rotation: 0 
+        const newBuilding = {
+          ...building,
+          id: crypto.randomUUID(),
+          x: Math.round(worldPos.x - building.width / 2),
+          y: Math.round(worldPos.y - building.length / 2),
+          rotation: 0
         };
         this.state.placedBuildings.push(newBuilding);
         this.selectBuilding(newBuilding.id);
@@ -642,6 +642,7 @@
             // 如果没有按住Shift键，则进行单选操作
             this.state.isDraggingBuilding = true;
             this.state.draggedBuilding.id = clickedBuilding.id;
+            // 从视觉左/上边缘计算偏移（处理旋转偏移）
             const _cr = clickedBuilding.rotation || 0;
             const _visW = _cr % 180 === 0 ? clickedBuilding.width : clickedBuilding.length;
             const _visL = _cr % 180 === 0 ? clickedBuilding.length : clickedBuilding.width;
@@ -726,6 +727,7 @@
             const primaryBuilding = this.state.placedBuildings.find(b => b.id === this.state.selectedBuildingId);
             if (primaryBuilding) {
                 const offset = this.state.moveModeInitialState.mouseOffset;
+                // G键移动：视觉边界吸附到整格（处理旋转偏移）
                 const _br = primaryBuilding.rotation || 0;
                 const _visW = _br % 180 === 0 ? primaryBuilding.width : primaryBuilding.length;
                 const _visL = _br % 180 === 0 ? primaryBuilding.length : primaryBuilding.width;
@@ -761,6 +763,7 @@
         } else if (this.state.isDraggingBuilding && this.state.draggedBuilding.id) {
           const building = this.state.placedBuildings.find(b => b.id === this.state.draggedBuilding.id);
           if (building) {
+            // 拖拽：视觉边界吸附到整格（处理旋转偏移）
             const _br = building.rotation || 0;
             const _visW = _br % 180 === 0 ? building.width : building.length;
             const _visL = _br % 180 === 0 ? building.length : building.width;
@@ -784,7 +787,6 @@
             } else {
               building.x = Math.round(worldPos.x - this.state.draggedBuilding.offsetX) - _vLOff;
               building.y = Math.round(worldPos.y - this.state.draggedBuilding.offsetY) - _vTOff;
-            }
             }
             this.elements.selectedPosX.textContent = building.x.toFixed(1);
             this.elements.selectedPosY.textContent = building.y.toFixed(1);
@@ -951,6 +953,7 @@
 
           const worldPos = this.screenToWorld(this.state.lastMousePos.x, this.state.lastMousePos.y);
 
+          // G键移动偏移量：从视觉左/上边缘计算（处理旋转偏移）
           const _cr = primaryBuilding.rotation || 0;
           const _visW = _cr % 180 === 0 ? primaryBuilding.width : primaryBuilding.length;
           const _visL = _cr % 180 === 0 ? primaryBuilding.length : primaryBuilding.width;
