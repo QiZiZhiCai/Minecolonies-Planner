@@ -12,7 +12,7 @@
 ## 更新日志：
 - v2.1.1 - 2026年6月17日（贡献者：杞梓之才）
 ```
-2.1版本贡献者杞梓之才注：我直到编辑此文档时才看见原来早就有了框选模式和蓝图移动模式，遂在界面里添加了提示文字
+2.1版本贡献者杞梓之才注：我直到编辑此文档时才看见原来早就有了框选模式和蓝图移动模式，遂在建筑描边透明度的滑动条下方添加了提示文字
 顺便把html文件里的开头注释删了，因为没必要
 ```
 
@@ -81,7 +81,13 @@
 5. Customization - Background colour, grid border colour, font zoom, blueprint transparency
 ---
 ## Changelog：
-- v2.1 - 2026 June 16th (Contributor: 杞梓之才)
+- v2.1.1 - 2026 June 17th (Contributor: 杞梓之才QiZiZhiCai)
+```
+Note from the contributor of v2.1 杞梓之才QiZiZhiCai: Until I edited this doc did I recognized there have already been a box selection mode and a blueprint moving mode, thus I added tip words under the slidebar of building outline transparency
+Also I deleted the header comments in the html file for they are unnecessary
+```
+
+- v2.1 - 2026 June 16th (Contributor: 杞梓之才QiZiZhiCai)
 1. UI left (Blueprint interface):
 ```
 The user prepares a xlsx file himself for reading to list all the options
