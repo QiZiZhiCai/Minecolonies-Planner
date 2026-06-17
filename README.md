@@ -1,4 +1,4 @@
-中文 English(ONLY for this doc! The tool itself has NOT been supported English yet!)
+[中文](./README.md#minecraft-模拟殖民地规划器) [English(ONLY for this doc! The tool itself has NOT been supported English yet!)](./README.md#minecraft-minecolonies-planner)
 # Minecraft 模拟殖民地规划器
 - 一款用于规划Minecraft游戏中模拟殖民地模组的殖民地建筑布局的工具
 
@@ -10,6 +10,12 @@
 5. 自定义设置 - 背景色调整、网格线颜色调整、字体缩放、蓝图透明度调整
 ---
 ## 更新日志：
+- v2.1.1 - 2026年6月17日（贡献者：杞梓之才）
+```
+2.1版本贡献者杞梓之才注：我直到编辑此文档时才看见原来早就有了框选模式和蓝图移动模式，遂在界面里添加了提示文字
+顺便把html文件里的开头注释删了，因为没必要
+```
+
 - v2.1 - 2026年6月16日（贡献者：杞梓之才）
 1. UI左侧（蓝图界面）：
 ```
