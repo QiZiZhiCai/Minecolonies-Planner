@@ -15,10 +15,13 @@
   - Tailwind CSS 用于界面样式
   - xlsx.js 用于Excel文件解析
   // 作者: JerichoLing
+  // 作者bilibili: https://space.bilibili.com/6416787
+  // 作者Github: https://github.com/JerichoLing
   // 创建时间 : 2025/09/07
-  // 最后修改时间 : 2025/09/10
-  // bilibili : https://space.bilibili.com/6416787
-  // github : https://github.com/JerichoLing
+  // 最后修改时间 : 2026/6/16
+  // 修改者：杞梓之才
+  // 修改者bilibili：https://space.bilibili.com/424610093
+  // 修改者Github: https://github.com/QiZiZhiCai
 -->
 <html lang="zh-CN">
 <head>
@@ -27,6 +30,7 @@
   <title>Minecraft 模拟殖民地规划器</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
   <style>
     body { 
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
@@ -173,17 +177,17 @@
         </div>
         <div class="flex items-center gap-3">
           <label for="grid-opacity" class="whitespace-nowrap">网格线透明度</label>
-          <input id="grid-opacity" type="range" min="0.1" max="1" step="0.05" value="1" class="w-full" />
+          <input id="grid-opacity" type="range" min="0" max="1" step="0.05" value="1" class="w-full" />
           <span id="grid-opacity-val" class="text-sm text-gray-300">1.00</span>
         </div>
         <div class="flex items-center gap-3">
           <label for="font-scale" class="whitespace-nowrap">字体缩放</label>
-          <input id="font-scale" type="range" min="0.2" max="2" step="0.05" value="1" class="w-full" />
+          <input id="font-scale" type="range" min="0" max="2" step="0.05" value="1" class="w-full" />
           <span id="font-scale-val" class="text-sm text-gray-300">1.00×</span>
         </div>
         <div class="flex items-center gap-3">
           <label for="building-opacity" class="whitespace-nowrap">建筑透明度</label>
-          <input id="building-opacity" type="range" min="0.1" max="1" step="0.05" value="0.5" class="w-full" />
+          <input id="building-opacity" type="range" min="0" max="1" step="0.05" value="0.5" class="w-full" />
           <span id="building-opacity-val" class="text-sm text-gray-300">0.50</span>
         </div>
         <div class="flex items-center gap-3">
@@ -210,6 +214,7 @@
           <button id="bg-image-down" class="bg-gray-600 hover:bg-gray-700 p-1 rounded text-lg">↓</button>
           <button id="bg-image-right" class="bg-gray-600 hover:bg-gray-700 p-1 rounded text-lg">→</button>
         </div>
+        <div class="text-[10px] text-gray-400 leading-relaxed">按住shift移动一区块<br>按住ctrl+shift移动16区块</div>
       </div>
 
       <div class="space-y-2 border-b border-gray-700 pb-4 mb-4">
@@ -251,14 +256,7 @@
   <script>
     const App = {
       data: {
-        initialBuildings: [
-          { pack: "基础包", category: "道路", name: "+", width: 5, length: 5 },
-          { pack: "基础包", category: "道路", name: "-", width: 5, length: 13 },
-          { pack: "基础包", category: "道路", name: "--", width: 5, length: 39 },
-          { pack: "基础包", category: "道路", name: "up", width: 5, length: 10 },
-          { pack: "基础包", category: "道路", name: "upup", width: 5, length: 5 }
-          // （为简短示例精简了列表，真实使用可自行扩展）
-        ],
+        initialBuildings: [],
         categoryColors: { 军事: "#ef4444", 农业: "#22c55e", 道路: "#595959", 工业: "#e26b0a", 教育: "#60497a", 城墙: "#808080", 基础: "#3b82f6", default: "#71717a" },
         customBuildings: []
       },
@@ -474,10 +472,30 @@
           this.draw();
         });
 
-        this.elements.bgImageUp.addEventListener('click', () => this.moveBackgroundImage(0, -1));
-        this.elements.bgImageDown.addEventListener('click', () => this.moveBackgroundImage(0, 1));
-        this.elements.bgImageLeft.addEventListener('click', () => this.moveBackgroundImage(-1, 0));
-        this.elements.bgImageRight.addEventListener('click', () => this.moveBackgroundImage(1, 0));
+        this.elements.bgImageUp.addEventListener('click', (e) => {
+          let step = 1;
+          if (e.shiftKey && e.ctrlKey) step = 256;
+          else if (e.shiftKey) step = 16;
+          this.moveBackgroundImage(0, -step);
+        });
+        this.elements.bgImageDown.addEventListener('click', (e) => {
+          let step = 1;
+          if (e.shiftKey && e.ctrlKey) step = 256;
+          else if (e.shiftKey) step = 16;
+          this.moveBackgroundImage(0, step);
+        });
+        this.elements.bgImageLeft.addEventListener('click', (e) => {
+          let step = 1;
+          if (e.shiftKey && e.ctrlKey) step = 256;
+          else if (e.shiftKey) step = 16;
+          this.moveBackgroundImage(-step, 0);
+        });
+        this.elements.bgImageRight.addEventListener('click', (e) => {
+          let step = 1;
+          if (e.shiftKey && e.ctrlKey) step = 256;
+          else if (e.shiftKey) step = 16;
+          this.moveBackgroundImage(step, 0);
+        });
 
         // keyboard shortcuts
         document.addEventListener('keydown', (e) => {
@@ -799,7 +817,7 @@
         const worldBefore = this.screenToWorld(mousePos.x, mousePos.y);
         const zoomFactor = 1.12;
         if (e.deltaY < 0) this.state.camera.zoom *= zoomFactor; else this.state.camera.zoom /= zoomFactor;
-        this.state.camera.zoom = Math.max(0.2, Math.min(this.state.camera.zoom, 8));
+        this.state.camera.zoom = Math.max(0.01, Math.min(this.state.camera.zoom, 10));
         const worldAfter = this.screenToWorld(mousePos.x, mousePos.y);
         // adjust offset so point under cursor stays
         const gs = this.state.gridSize;
@@ -1233,6 +1251,116 @@
         return this.hexToRgbA(hexColor, clampedAlpha);
       },
 
+      // Office 默认主题色（当Excel使用主题色而非显式RGB时使用）
+      defaultThemeColors: [
+        '#000000', '#FFFFFF', '#808080', '#E0E0E0',
+        '#4472C4', '#ED7D31', '#A5A5A5', '#FFC000',
+        '#5B9BD5', '#70AD47'
+      ],
+
+      // 对hex颜色应用tint（OOXML公式）
+      applyTint(hex, tint) {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        const mix = (c) => {
+          const v = tint >= 0 ? c + tint * (255 - c) : c * (1 + tint);
+          return Math.max(0, Math.min(255, Math.round(v)));
+        };
+        return '#' + [mix(r), mix(g), mix(b)].map(v => v.toString(16).padStart(2, '0').toUpperCase()).join('');
+      },
+
+      // 从单元格读取填充颜色（支持显式RGB和主题色）
+      getCellFillColor(cell) {
+        if (!cell || !cell.s || !cell.s.fill) return null;
+        // 跳过无填充样式的单元格
+        if (cell.s.fill.patternType === 'none') return null;
+        const fg = cell.s.fill.fgColor;
+        if (!fg) return null;
+
+        // 1) 显式 RGB 颜色
+        if (fg.rgb) {
+          return '#' + fg.rgb.slice(-6).toUpperCase();
+        }
+
+        // 2) 主题色（需解析 theme + tint）
+        if (fg.theme !== undefined) {
+          const base = this.defaultThemeColors[fg.theme];
+          if (base) {
+            if (fg.tint) return this.applyTint(base, fg.tint);
+            return base;
+          }
+        }
+
+        return null;
+      },
+
+      // 从 xlsx ZIP 中解析单元格填充颜色（xlsx.js CE 不提供此信息）
+      async parseCellFillColorsFromZip(arrayBuffer) {
+        const zip = await JSZip.loadAsync(arrayBuffer);
+        const colorMap = {};
+
+        // 解析样式文件
+        const stylesFile = zip.file('xl/styles.xml');
+        if (!stylesFile) return colorMap;
+        const stylesStr = await stylesFile.async('string');
+        const styleDoc = new DOMParser().parseFromString(stylesStr, 'text/xml');
+
+        // 读取所有填充定义
+        const fills = [];
+        const fillNodes = styleDoc.getElementsByTagName('fill');
+        for (let i = 0; i < fillNodes.length; i++) {
+          const pf = fillNodes[i].getElementsByTagName('patternFill')[0];
+          if (!pf) { fills.push({ patternType: 'none', fgColor: null }); continue; }
+          const patternType = pf.getAttribute('patternType') || 'none';
+          const fgEl = pf.getElementsByTagName('fgColor')[0];
+          fills.push({
+            patternType,
+            fgColor: fgEl ? {
+              rgb: fgEl.getAttribute('rgb'),
+              theme: fgEl.getAttribute('theme'),
+              tint: fgEl.getAttribute('tint')
+            } : null
+          });
+        }
+
+        // 读取 cellXfs（样式索引 → fillId）
+        const xfNodes = styleDoc.getElementsByTagName('cellXfs')[0];
+        const cellXfs = [];
+        if (xfNodes) {
+          const xfList = xfNodes.getElementsByTagName('xf');
+          for (let i = 0; i < xfList.length; i++) {
+            cellXfs.push({ fillId: parseInt(xfList[i].getAttribute('fillId'), 10) });
+          }
+        }
+
+        // 解析工作表 XML
+        const sheetFile = zip.file('xl/worksheets/sheet1.xml')
+                       || zip.file('xl/worksheets/sheet.xml');
+        if (!sheetFile) return colorMap;
+        const sheetStr = await sheetFile.async('string');
+        const sheetDoc = new DOMParser().parseFromString(sheetStr, 'text/xml');
+
+        // 遍历所有单元格，提取 s 属性映射到填充颜色
+        const cells = sheetDoc.getElementsByTagName('c');
+        for (let i = 0; i < cells.length; i++) {
+          const cell = cells[i];
+          const ref = cell.getAttribute('r');
+          const sAttr = cell.getAttribute('s');
+          if (sAttr === null || sAttr === undefined) continue;
+          const xfIdx = parseInt(sAttr, 10);
+          if (isNaN(xfIdx) || xfIdx < 0 || xfIdx >= cellXfs.length) continue;
+          const fillId = cellXfs[xfIdx].fillId;
+          if (isNaN(fillId) || fillId < 0 || fillId >= fills.length) continue;
+          const fill = fills[fillId];
+          if (fill.patternType === 'solid' && fill.fgColor) {
+            colorMap[ref] = fill.fgColor;
+          }
+        }
+
+        return colorMap;
+      },
+
       getBuildingAt(worldX, worldY) {
         for (let i = this.state.placedBuildings.length - 1; i >= 0; i--) {
           const building = this.state.placedBuildings[i];
@@ -1480,57 +1608,95 @@
         } else { alert('请输入有效的建筑信息！'); }
       },
 
-      onExcelUpload(evt) {
+      async onExcelUpload(evt) {
         const file = evt.target.files[0];
         if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const data = new Uint8Array(e.target.result);
-          const wb = XLSX.read(data, { type: 'array', cellStyles: true });
-          const wsName = wb.SheetNames[0];
-          const ws = wb.Sheets[wsName];
-          const json = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false });
-          if (!json || json.length < 2) { alert('Excel 内容为空或格式不正确'); return; }
 
-          const header = json[0].map(h => (h || '').toString().trim());
-          const findIdx = (names) => names.map(n => header.findIndex(h => h && h.indexOf(n) !== -1)).find(i => i >= 0);
-          const idxCat = findIdx(['分类', 'category']) ?? 0;
-          const idxName = findIdx(['名称', 'name']) ?? 1;
-          const idxW = findIdx(['宽', 'width']) ?? 2;
-          const idxL = findIdx(['长', 'length', '长边']) ?? 3;
+        const arrayBuffer = await file.arrayBuffer();
+        const data = new Uint8Array(arrayBuffer);
+        const wb = XLSX.read(data, { type: 'array', cellStyles: true });
+        const wsName = wb.SheetNames[0];
+        const ws = wb.Sheets[wsName];
 
-          const rows = [];
-          for (let r = 1; r < json.length; r++) {
-            const row = json[r];
-            if (!row) continue;
-            const category = (row[idxCat] || '其他').toString().trim();
-            const name = (row[idxName] || '').toString().trim();
-            if (!name) continue;
-            const wRaw = (row[idxW] || '').toString().trim();
-            const lRaw = (row[idxL] || '').toString().trim();
-            const width = parseInt(wRaw.replace(/[^\d]/g, ''), 10);
-            const length = parseInt(lRaw.replace(/[^\d]/g, ''), 10);
-            if (!(width > 0 && length > 0)) continue;
+        if (!ws['!ref']) { alert('Excel 内容为空'); return; }
+        const range = XLSX.utils.decode_range(ws['!ref']);
+        if (range.e.r <= range.s.r) { alert('Excel 内容为空或格式不正确'); return; }
 
-            let entranceEdge = 'bottom';
-            
-            if (wRaw.includes('出入口')) {
-                entranceEdge = 'bottom';
-            } 
-            else if (lRaw.includes('出入口')) {
-                entranceEdge = 'right';
+        // 从 ZIP XML 解析单元格填充颜色（xlsx.js CE 不提供此信息）
+        let cellFillColors = {};
+        try {
+          cellFillColors = await this.parseCellFillColorsFromZip(arrayBuffer);
+        } catch (err) {
+          console.warn('解析填充颜色失败', err);
+        }
+
+        // 读取表头
+        const header = [];
+        for (let C = range.s.c; C <= range.e.c; C++) {
+          const cell = ws[XLSX.utils.encode_cell({ r: range.s.r, c: C })];
+          header.push(cell ? String(cell.v || '').trim() : '');
+        }
+        const findIdx = (names) => names.map(n => header.findIndex(h => h && h.indexOf(n) !== -1)).find(i => i >= 0);
+        const idxCat = findIdx(['分类', 'category']) ?? 0;
+        const idxName = findIdx(['名称', 'name']) ?? 1;
+        const idxW = findIdx(['宽', 'width']) ?? 2;
+        const idxL = findIdx(['长', 'length', '长边']) ?? 3;
+
+        const categoryColorsFromExcel = {};
+        const rows = [];
+        const colCat = XLSX.utils.encode_col(idxCat); // 分类列的字母（A,B,C...）
+
+        // 按工作表实际行号遍历数据行
+        for (let R = range.s.r + 1; R <= range.e.r; R++) {
+          const catCell = ws[XLSX.utils.encode_cell({ r: R, c: idxCat })];
+          const nameCell = ws[XLSX.utils.encode_cell({ r: R, c: idxName })];
+          const wCell = ws[XLSX.utils.encode_cell({ r: R, c: idxW })];
+          const lCell = ws[XLSX.utils.encode_cell({ r: R, c: idxL })];
+
+          if (!nameCell || !String(nameCell.v || '').trim()) continue;
+
+          const category = catCell ? String(catCell.v || '').trim() : '其他';
+          const name = String(nameCell.v || '').trim();
+          if (!name) continue;
+
+          const wRaw = wCell ? String(wCell.v || '').trim() : '';
+          const lRaw = lCell ? String(lCell.v || '').trim() : '';
+          const width = parseInt(wRaw.replace(/[^\d]/g, ''), 10);
+          const length = parseInt(lRaw.replace(/[^\d]/g, ''), 10);
+          if (!(width > 0 && length > 0)) continue;
+
+          // 从 ZIP XML 解析的填充颜色中查找该分类单元格的颜色
+          if (category && !categoryColorsFromExcel[category]) {
+            const cellRef = colCat + (R + 1); // R是0-indexed，Excel行号需+1
+            const fgColor = cellFillColors[cellRef];
+            if (fgColor) {
+              let color = null;
+              if (fgColor.rgb) {
+                color = '#' + fgColor.rgb.slice(-6).toUpperCase();
+              } else if (fgColor.theme !== undefined) {
+                const base = this.defaultThemeColors[parseInt(fgColor.theme, 10)];
+                if (base) {
+                  color = fgColor.tint ? this.applyTint(base, parseFloat(fgColor.tint)) : base;
+                }
+              }
+              if (color) categoryColorsFromExcel[category] = color;
             }
-
-            rows.push({ category, name, width, length, entranceEdge });
           }
 
-          this.applyExcel(rows);
-        };
-        reader.readAsArrayBuffer(file);
+          let entranceEdge = 'bottom';
+          if (wRaw.includes('出入口')) entranceEdge = 'bottom';
+          else if (lRaw.includes('出入口')) entranceEdge = 'right';
+
+          rows.push({ category, name, width, length, entranceEdge });
+        }
+
+        this.applyExcel(rows, categoryColorsFromExcel);
       },
 
-      applyExcel(rows) {
+      applyExcel(rows, categoryColorsFromExcel = {}) {
         if (!rows.length) { alert('未从Excel读取到有效数据'); return; }
+        // 将Excel中提取的分类颜色合并到调色板
+        Object.assign(this.data.categoryColors, categoryColorsFromExcel);
         const key = (b) => `${b.category}__${b.name}`;
         const map = new Map();
         [...this.data.initialBuildings, ...this.data.customBuildings].forEach(b => map.set(key(b), { ...b }));
@@ -1545,33 +1711,41 @@
       exportData() {
         const dataToExport = { placed: this.state.placedBuildings, custom: this.data.customBuildings, fontScale: this.state.fontScale };
         const json = JSON.stringify(dataToExport, null, 2);
-        this.elements.dataIO.value = json;
-        this.elements.dataIO.classList.remove('hidden');
-        this.elements.dataIO.select();
-        try { navigator.clipboard.writeText(json).then(() => alert('规划数据已复制到剪贴板！')); }
-        catch (e) { console.error('无法复制到剪贴板', e); alert('无法自动复制，请手动复制文本框中的内容。'); }
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.download = 'minecolonies-plan.json';
+        a.href = url;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        alert('规划数据已导出为 minecolonies-plan.json！');
       },
 
       importData() {
-        if (this.elements.dataIO.classList.contains('hidden')) {
-          this.elements.dataIO.classList.remove('hidden');
-          this.elements.dataIO.value = '';
-          alert('请将数据粘贴到文本框中，然后再次点击“导入规划”。');
-          return;
-        }
-        const json = this.elements.dataIO.value;
-        if (!json) { alert('数据为空！'); return; }
-        try {
-          const data = JSON.parse(json);
-          if (Array.isArray(data.placed)) this.state.placedBuildings = data.placed;
-          if (Array.isArray(data.custom)) this.data.customBuildings = data.custom;
-          if (typeof data.fontScale === 'number') { this.state.fontScale = data.fontScale; this.elements.fontScale.value = String(data.fontScale); this.elements.fontScaleVal.textContent = this.state.fontScale.toFixed(2) + '×'; }
-          this.setupPalette();
-          this.unselectBuilding();
-          this.draw();
-          this.elements.dataIO.classList.add('hidden');
-          alert('规划导入成功！');
-        } catch (e) { alert('导入失败！数据格式错误。'); console.error(e); }
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        input.onchange = (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            try {
+              const data = JSON.parse(ev.target.result);
+              if (Array.isArray(data.placed)) this.state.placedBuildings = data.placed;
+              if (Array.isArray(data.custom)) this.data.customBuildings = data.custom;
+              if (typeof data.fontScale === 'number') { this.state.fontScale = data.fontScale; this.elements.fontScale.value = String(data.fontScale); this.elements.fontScaleVal.textContent = this.state.fontScale.toFixed(2) + '×'; }
+              this.setupPalette();
+              this.unselectBuilding();
+              this.draw();
+              alert('规划导入成功！');
+            } catch (err) { alert('导入失败！数据格式错误。'); console.error(err); }
+          };
+          reader.readAsText(file);
+        };
+        input.click();
       },
 
       exportImage() {
@@ -1708,7 +1882,7 @@
       },
 
       roundToHalfGrid(value) {
-        return Math.round(value * 2) / 2;
+        return Math.round(value);
       }
     };
 
