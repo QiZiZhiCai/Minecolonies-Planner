@@ -642,8 +642,13 @@
             // 如果没有按住Shift键，则进行单选操作
             this.state.isDraggingBuilding = true;
             this.state.draggedBuilding.id = clickedBuilding.id;
-            this.state.draggedBuilding.offsetX = worldPos.x - clickedBuilding.x;
-            this.state.draggedBuilding.offsetY = worldPos.y - clickedBuilding.y;
+            const _cr = clickedBuilding.rotation || 0;
+            const _visW = _cr % 180 === 0 ? clickedBuilding.width : clickedBuilding.length;
+            const _visL = _cr % 180 === 0 ? clickedBuilding.length : clickedBuilding.width;
+            const _vLOff = _cr % 180 === 0 ? 0 : (_visW - _visL) / 2;
+            const _vTOff = _cr % 180 === 0 ? 0 : (_visL - _visW) / 2;
+            this.state.draggedBuilding.offsetX = worldPos.x - (clickedBuilding.x + _vLOff);
+            this.state.draggedBuilding.offsetY = worldPos.y - (clickedBuilding.y + _vTOff);
             
             // 如果当前建筑不在多选集合中，则清空多选集合，只选择当前建筑
             if (!this.state.selectedBuildingIds.has(clickedBuilding.id)) {
@@ -721,10 +726,13 @@
             const primaryBuilding = this.state.placedBuildings.find(b => b.id === this.state.selectedBuildingId);
             if (primaryBuilding) {
                 const offset = this.state.moveModeInitialState.mouseOffset;
-                const newPrimaryX = this.roundToHalfGrid(worldPos.x - offset.x);
-                const newPrimaryY = this.roundToHalfGrid(worldPos.y - offset.y);
-                const deltaX = newPrimaryX - primaryBuilding.x;
-                const deltaY = newPrimaryY - primaryBuilding.y;
+                const _br = primaryBuilding.rotation || 0;
+                const _visW = _br % 180 === 0 ? primaryBuilding.width : primaryBuilding.length;
+                const _visL = _br % 180 === 0 ? primaryBuilding.length : primaryBuilding.width;
+                const _vLOff = _br % 180 === 0 ? 0 : (_visW - _visL) / 2;
+                const _vTOff = _br % 180 === 0 ? 0 : (_visL - _visW) / 2;
+                const deltaX = Math.round(worldPos.x - offset.x) - (primaryBuilding.x + _vLOff);
+                const deltaY = Math.round(worldPos.y - offset.y) - (primaryBuilding.y + _vTOff);
 
                 if (deltaX !== 0 || deltaY !== 0) {
                     this.state.placedBuildings.forEach(b => {
@@ -753,13 +761,20 @@
         } else if (this.state.isDraggingBuilding && this.state.draggedBuilding.id) {
           const building = this.state.placedBuildings.find(b => b.id === this.state.draggedBuilding.id);
           if (building) {
-            const newX = worldPos.x - this.state.draggedBuilding.offsetX;
-            const newY = worldPos.y - this.state.draggedBuilding.offsetY;
-            
+            const _br = building.rotation || 0;
+            const _visW = _br % 180 === 0 ? building.width : building.length;
+            const _visL = _br % 180 === 0 ? building.length : building.width;
+            const _vLOff = _br % 180 === 0 ? 0 : (_visW - _visL) / 2;
+            const _vTOff = _br % 180 === 0 ? 0 : (_visL - _visW) / 2;
+
             if (this.state.selectedBuildingIds.size > 1) {
-              const deltaX = this.roundToHalfGrid(newX) - building.x;
-              const deltaY = this.roundToHalfGrid(newY) - building.y;
-              
+              const oldVisLeft = building.x + _vLOff;
+              const oldVisTop = building.y + _vTOff;
+              const newVisLeft = Math.round(worldPos.x - this.state.draggedBuilding.offsetX);
+              const newVisTop = Math.round(worldPos.y - this.state.draggedBuilding.offsetY);
+              const deltaX = newVisLeft - oldVisLeft;
+              const deltaY = newVisTop - oldVisTop;
+
               this.state.placedBuildings.forEach(b => {
                 if (this.state.selectedBuildingIds.has(b.id)) {
                   b.x += deltaX;
@@ -767,8 +782,9 @@
                 }
               });
             } else {
-              building.x = this.roundToHalfGrid(newX);
-              building.y = this.roundToHalfGrid(newY);
+              building.x = Math.round(worldPos.x - this.state.draggedBuilding.offsetX) - _vLOff;
+              building.y = Math.round(worldPos.y - this.state.draggedBuilding.offsetY) - _vTOff;
+            }
             }
             this.elements.selectedPosX.textContent = building.x.toFixed(1);
             this.elements.selectedPosY.textContent = building.y.toFixed(1);
@@ -935,11 +951,16 @@
 
           const worldPos = this.screenToWorld(this.state.lastMousePos.x, this.state.lastMousePos.y);
 
+          const _cr = primaryBuilding.rotation || 0;
+          const _visW = _cr % 180 === 0 ? primaryBuilding.width : primaryBuilding.length;
+          const _visL = _cr % 180 === 0 ? primaryBuilding.length : primaryBuilding.width;
+          const _vLOff = _cr % 180 === 0 ? 0 : (_visW - _visL) / 2;
+          const _vTOff = _cr % 180 === 0 ? 0 : (_visL - _visW) / 2;
           this.state.moveModeInitialState = {
               buildings: JSON.parse(JSON.stringify(selectedBuildings)), // Deep copy for cancellation
               mouseOffset: {
-                  x: worldPos.x - primaryBuilding.x,
-                  y: worldPos.y - primaryBuilding.y
+                  x: worldPos.x - (primaryBuilding.x + _vLOff),
+                  y: worldPos.y - (primaryBuilding.y + _vTOff)
               }
           };
           this.state.isMoveMode = true;
