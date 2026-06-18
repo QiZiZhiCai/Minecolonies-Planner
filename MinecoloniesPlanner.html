@@ -1424,15 +1424,17 @@
         
         if (this.state.selectedBuildingIds.size > 1) {
           let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-          
+
           const selectedBuildings = this.state.placedBuildings.filter(b => this.state.selectedBuildingIds.has(b.id));
           selectedBuildings.forEach(b => {
             const w = b.rotation % 180 === 0 ? b.width : b.length;
             const l = b.rotation % 180 === 0 ? b.length : b.width;
-            minX = Math.min(minX, b.x);
-            minY = Math.min(minY, b.y);
-            maxX = Math.max(maxX, b.x + w);
-            maxY = Math.max(maxY, b.y + l);
+            const vLOff = b.rotation % 180 === 0 ? 0 : (w - l) / 2;
+            const vTOff = b.rotation % 180 === 0 ? 0 : (l - w) / 2;
+            minX = Math.min(minX, b.x + vLOff);
+            minY = Math.min(minY, b.y + vTOff);
+            maxX = Math.max(maxX, b.x + vLOff + (b.rotation % 180 === 0 ? w : l));
+            maxY = Math.max(maxY, b.y + vTOff + (b.rotation % 180 === 0 ? l : w));
           });
           
           const centerX = (minX + maxX) / 2;
